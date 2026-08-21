@@ -1,0 +1,66 @@
+{
+  "name": "cbp-builder",
+  "displayName": "CBP Builder",
+  "description": "Discover and build Code::Blocks CBP projects from VS Code",
+  "version": "0.0.2",
+  "engines": {
+    "vscode": "^1.134.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": ["onView:cbpBuilder.projects", "onCommand:cbpBuilder.addProject", "workspaceContains:**/*.cbp"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [{
+        "id": "cbpBuilder",
+        "title": "CBP Builder",
+        "icon": "$(tools)"
+      }]
+    },
+    "views": {
+      "cbpBuilder": [{
+        "id": "cbpBuilder.projects",
+        "name": "CBP 工程",
+        "contextualTitle": "CBP Builder",
+        "icon": "$(project)"
+      }]
+    },
+    "commands": [
+      { "command": "cbpBuilder.addProject", "title": "添加 .cbp 工程", "icon": "$(new-file)" },
+      { "command": "cbpBuilder.refresh", "title": "刷新 CBP 工程", "icon": "$(refresh)" },
+      { "command": "cbpBuilder.buildIncremental", "title": "CBP: 增量编译", "icon": "$(play)" },
+      { "command": "cbpBuilder.buildFull", "title": "CBP: 全量编译", "icon": "$(rebuild)" },
+      { "command": "cbpBuilder.selectMode", "title": "选择编译方式", "icon": "$(settings-gear)" }
+    ],
+    "menus": {
+      "view/title": [{ "command": "cbpBuilder.addProject", "when": "view == cbpBuilder.projects", "group": "navigation@1" }, { "command": "cbpBuilder.refresh", "when": "view == cbpBuilder.projects", "group": "navigation@2" }],
+      "view/item/context": [{ "command": "cbpBuilder.buildIncremental", "when": "view == cbpBuilder.projects && viewItem == cbpProject", "group": "inline@1" }, { "command": "cbpBuilder.buildFull", "when": "view == cbpBuilder.projects && viewItem == cbpProject", "group": "inline@2" }],
+      "explorer/context": [{ "command": "cbpBuilder.buildIncremental", "when": "resourceExtname == .cbp", "group": "navigation@1" }, { "command": "cbpBuilder.buildFull", "when": "resourceExtname == .cbp", "group": "navigation@2" }]
+    },
+    "configuration": { "title": "CBP Builder", "properties": { "cbpBuilder.toolchainSearchPaths": { "type": "array", "items": { "type": "string" }, "default": [], "description": "工具链目录；也可使用 TOOLCHAIN_DIR 环境变量或 PATH。" }, "cbpBuilder.makeCommand": { "type": "string", "default": "mingw32-make", "description": "Make 命令名称。" } } }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.134.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "24.x",
+    "typescript-eslint": "^8.61.1",
+    "eslint": "^10.5.0",
+    "typescript": "^6.0.3",
+    "@vscode/test-cli": "^0.0.15",
+    "@vscode/test-electron": "^3.0.0"
+  },
+  "overrides": {
+    "diff": "^8.0.4",
+    "serialize-javascript": "^7.0.6"
+  }
+}

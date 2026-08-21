@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Compiled extension output
+out/
+
+# VS Code extension test artifacts
+.vscode-test/
+
+# Logs and reports
+*.log
+.npm/
+
+# TypeScript and bundler caches
+*.tsbuildinfo
+.cache/
+
+# Packaged extension artifacts
+*.vsix
+
+# Local environment and operating system files
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
