@@ -188,6 +188,11 @@ function createOutputDecoder(): { decode: (data: Buffer) => string; flush: () =>
 	};
 }
 
+function formatOutputPath(value: string): string {
+	const normalized = value.replace(/^([a-z]):/i, (_, drive: string) => `${drive.toUpperCase()}:`);
+	return normalized.replace(/ /g, '\u00a0').replace(/^([A-Z]):/, '$1\u2060:');
+}
+
 type BuildResource = vscode.Uri | ProjectItem;
 
 async function chooseProject(provider: ProjectProvider, resource?: BuildResource): Promise<CbpProject | undefined> {
@@ -206,19 +211,32 @@ async function build(provider: ProjectProvider, mode: BuildMode, resource?: Buil
 	const make = vscode.workspace.getConfiguration('cbpBuilder').get<string>('makeCommand', 'mingw32-make');
 	const toolchain = findToolchain();
 	const output = vscode.window.createOutputChannel('CBP Builder');
+	output.clear();
 	output.show(true);
-	output.appendLine(`[CBP Builder] ${mode === 'full' ? '全量' : '增量'}编译: ${project.file}`);
-	output.appendLine(`[CBP Builder] 工具链: ${toolchain ?? '默认环境'}`);
+	const modeLabel = mode === 'full' ? '全量编译' : '增量编译';
+	const projectDirectory = path.dirname(project.file);
+	output.appendLine('='.repeat(72));
+	output.appendLine(`[CBP Builder] ${modeLabel}`);
+	output.appendLine(`[CBP Builder] 工程: ${formatOutputPath(project.file)}`);
+	output.appendLine(`[CBP Builder] 目录: ${formatOutputPath(projectDirectory)}`);
+	output.appendLine(`[CBP Builder] 工具链: ${formatOutputPath(toolchain ?? '默认环境')}`);
+	output.appendLine(`[CBP Builder] Make: ${make}`);
+	output.appendLine('='.repeat(72));
 	try { ensureMakefile(project, output); } catch (error) {
 		const message = error instanceof Error ? error.message : String(error);
-		output.appendLine(`[CBP Builder] 生成 Makefile 失败: ${message}`);
+		output.appendLine(`[失败] 生成 Makefile: ${message}`);
 		vscode.window.showErrorMessage(`${project.title} 无法生成 Makefile，请查看 CBP Builder 输出`);
 		provider.lastResult = `${mode === 'full' ? '全量' : '增量'}编译失败，无法生成 Makefile`;
 		provider.refresh();
 		return;
 	}
 	const env = { ...process.env, ...(toolchain ? { PATH: `${toolchain}${path.delimiter}${process.env.PATH ?? ''}` } : {}) };
-	const run = (args: string[]) => new Promise<number>(resolve => {
+	const run = (phase: string, args: string[]) => new Promise<number>(resolve => {
+		const startedAt = Date.now();
+		const command = [make, '--no-print-directory', '--trace', ...args].join(' ');
+		output.appendLine('');
+		output.appendLine(`----- ${phase} -----`);
+		output.appendLine(`[命令] ${command}`);
 		const child = cp.spawn(make, ['--no-print-directory', '--trace', ...args], { cwd: path.dirname(project.file), env, shell: true });
 		const stdoutDecoder = createOutputDecoder();
 		const stderrDecoder = createOutputDecoder();
@@ -227,13 +245,19 @@ async function build(provider: ProjectProvider, mode: BuildMode, resource?: Buil
 		child.on('close', code => {
 			output.append(stdoutDecoder.flush());
 			output.append(stderrDecoder.flush());
-			resolve(code ?? 1);
+			const exitCode = code ?? 1;
+			const elapsed = ((Date.now() - startedAt) / 1000).toFixed(1);
+			output.appendLine('');
+			output.appendLine(`[${exitCode === 0 ? '完成' : '失败'}] ${phase}，退出码 ${exitCode}，耗时 ${elapsed}s`);
+			resolve(exitCode);
 		});
 	});
-	const cleanCode = mode === 'full' ? await run(['clean']) : 0;
-	const code = cleanCode === 0 ? await run([]) : cleanCode;
+	const cleanCode = mode === 'full' ? await run('清理旧输出', ['clean']) : 0;
+	const code = cleanCode === 0 ? await run(modeLabel, []) : cleanCode;
 	provider.lastResult = code === 0 ? `成功 (${new Date().toLocaleTimeString()})` : `失败，退出码 ${code}`;
 	provider.refresh();
+	output.appendLine('');
+	output.appendLine(`===== ${code === 0 ? '构建成功' : '构建失败'} =====`);
 	if (code === 0) {vscode.window.showInformationMessage(`${project.title} 编译成功`);} else {vscode.window.showErrorMessage(`${project.title} 编译失败，请查看 CBP Builder 输出`);}
 }
 

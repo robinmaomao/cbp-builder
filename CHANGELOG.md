@@ -4,6 +4,23 @@ All notable changes to the "cbp-builder" extension will be documented in this fi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.0.12-beta]
+
+- 修复编译输出中的工程路径被 VS Code 自动标红的问题。
+- 统一 Windows 路径盘符为大写，并保持包含空格的路径不换行。
+- 保持实际构建路径和 Make 执行参数不变。
+
+## [0.0.11-beta]
+
+- 修复工程路径、工程目录和工具链路径中包含空格时，编译输出显示被错误换行的问题。
+- 使用不可断行空格优化路径摘要显示，同时保持实际构建路径和命令参数不变。
+
+## [0.0.10-beta]
+
+- 优化 CBP Builder 编译输出，增加工程摘要、构建阶段、实际命令、耗时和退出状态。
+- 区分全量编译中的清理阶段与编译阶段，并在日志末尾显示明确的构建结果。
+- 每次构建前清空旧输出，同时保留 Make 的完整编译、链接和后处理信息。
+
 ## [0.0.9-beta]
 
 - 根据当前选择的增量编译或全量编译方式，更新工程视图中的编译方式和编译结果。

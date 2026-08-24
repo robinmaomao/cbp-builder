@@ -43,4 +43,4 @@
 
 ## 更新记录
 
-详细变更请参阅 [CHANGELOG.md](CHANGELOG.md)。当前版本为 `v0.0.9-beta`。
+详细变更请参阅 [CHANGELOG.md](CHANGELOG.md)。当前版本为 `v0.0.12-beta`。
