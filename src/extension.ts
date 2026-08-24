@@ -200,6 +200,9 @@ async function chooseProject(provider: ProjectProvider, resource?: BuildResource
 async function build(provider: ProjectProvider, mode: BuildMode, resource?: BuildResource): Promise<void> {
 	const project = await chooseProject(provider, resource);
 	if (!project) {return;}
+	provider.mode = mode;
+	provider.lastResult = `${mode === 'full' ? '全量' : '增量'}编译中...`;
+	provider.refresh();
 	const make = vscode.workspace.getConfiguration('cbpBuilder').get<string>('makeCommand', 'mingw32-make');
 	const toolchain = findToolchain();
 	const output = vscode.window.createOutputChannel('CBP Builder');
@@ -210,7 +213,7 @@ async function build(provider: ProjectProvider, mode: BuildMode, resource?: Buil
 		const message = error instanceof Error ? error.message : String(error);
 		output.appendLine(`[CBP Builder] 生成 Makefile 失败: ${message}`);
 		vscode.window.showErrorMessage(`${project.title} 无法生成 Makefile，请查看 CBP Builder 输出`);
-		provider.lastResult = '失败，无法生成 Makefile';
+		provider.lastResult = `${mode === 'full' ? '全量' : '增量'}编译失败，无法生成 Makefile`;
 		provider.refresh();
 		return;
 	}

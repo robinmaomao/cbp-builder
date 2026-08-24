@@ -2,7 +2,7 @@
   "name": "cbp-builder",
   "displayName": "CBP Builder",
   "description": "Discover and build Code::Blocks CBP projects from VS Code",
-  "version": "0.0.7-beta",
+  "version": "0.0.9-beta",
   "repository": {
     "type": "git",
     "url": "https://github.com/robinmaomao/cbp-builder.git"
@@ -34,8 +34,8 @@
     "commands": [
       { "command": "cbpBuilder.addProject", "title": "添加 .cbp 工程", "icon": "$(new-file)" },
       { "command": "cbpBuilder.refresh", "title": "刷新 CBP 工程", "icon": "$(refresh)" },
-      { "command": "cbpBuilder.buildIncremental", "title": "CBP: 增量编译", "icon": "$(play)" },
-      { "command": "cbpBuilder.buildFull", "title": "CBP: 全量编译", "icon": "$(rebuild)" },
+      { "command": "cbpBuilder.buildIncremental", "title": "CBP: 增量编译", "icon": "$(run)" },
+      { "command": "cbpBuilder.buildFull", "title": "CBP: 全量编译", "icon": "$(run-all)" },
       { "command": "cbpBuilder.selectMode", "title": "选择编译方式", "icon": "$(settings-gear)" }
     ],
     "menus": {
