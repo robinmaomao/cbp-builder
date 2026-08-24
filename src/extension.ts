@@ -125,16 +125,16 @@ function generateMakefile(project: CbpProject): string {
 		'all: postbuild',
 		'',
 		`$(TARGET): $(OBJECTS) $(OBJ_DIR)/ram.o${appXmSource ? ' $(BIN_DIR)/appxm.o' : ''} | prebuild`,
-		'\t@"$(CC)" $(OBJECTS) $(LDFLAGS) $(LDLIBS) -o "$@"',
+		'\t"$(CC)" $(OBJECTS) $(LDFLAGS) $(LDLIBS) -o "$@"',
 		''
 	];
 	sources.forEach((source, index) => {
 		lines.push(`${objects[index]}: ${quoteMake(source)} | $(OBJ_DIR)`);
-		lines.push(`\t@"$(CC)" $(CPPFLAGS) $(CFLAGS) -c "$<" -o "$@"`, '');
+		lines.push(`\t"$(CC)" $(CPPFLAGS) $(CFLAGS) -c "$<" -o "$@"`, '');
 	});
 	lines.push(
 		'$(OBJ_DIR)/ram.o: ram.ld | $(OBJ_DIR)',
-		'\t@"$(CC)" $(CFLAGS) $(CPPFLAGS) -E -P -x c -c "$<" -o "$@"',
+		'\t"$(CC)" $(CFLAGS) $(CPPFLAGS) -E -P -x c -c "$<" -o "$@"',
 		'',
 		'$(BIN_DIR) $(OBJ_DIR):',
 		'\t@if not exist "$@" mkdir "$@"',
@@ -143,17 +143,17 @@ function generateMakefile(project: CbpProject): string {
 	if (appXmSource) {
 		lines.push(
 			'$(BIN_DIR)/appxm.o: ' + quoteMake(appXmSource) + ' | $(BIN_DIR)',
-			'\t@"$(CC)" $(CFLAGS) $(CPPFLAGS) -E -P -x c -c "$<" -o "$@"',
+			'\t"$(CC)" $(CFLAGS) $(CPPFLAGS) -E -P -x c -c "$<" -o "$@"',
 			''
 		);
 	}
-	if (project.preBuild) {lines.push('prebuild: | $(BIN_DIR) $(OBJ_DIR)', `\t@${project.preBuild.replace(/\$\(PROJECT_NAME\)/g, '$(PROJECT)')}`, '');}
+	if (project.preBuild) {lines.push('prebuild: | $(BIN_DIR) $(OBJ_DIR)', `\t${project.preBuild.replace(/\$\(PROJECT_NAME\)/g, '$(PROJECT)')}`, '');}
 	else {lines.push('prebuild: | $(BIN_DIR) $(OBJ_DIR)', '');}
-	if (project.postBuild) {lines.push('postbuild: $(TARGET)', `\t@${project.postBuild.replace(/\$\(PROJECT_NAME\)/g, '$(PROJECT)')}`, '');}
+	if (project.postBuild) {lines.push('postbuild: $(TARGET)', `\t${project.postBuild.replace(/\$\(PROJECT_NAME\)/g, '$(PROJECT)')}`, '');}
 	else {lines.push('postbuild: $(TARGET)', '');}
 	lines.push(
 		'clean:',
-		'\t@-powershell -NoProfile -ExecutionPolicy Bypass -Command "Remove-Item -LiteralPath \'$(OBJ_DIR)\' -Recurse -Force -ErrorAction SilentlyContinue; Remove-Item -LiteralPath \'$(TARGET)\' -Force -ErrorAction SilentlyContinue; exit 0"',
+		'\t-powershell -NoProfile -ExecutionPolicy Bypass -Command "Remove-Item -LiteralPath \'$(OBJ_DIR)\' -Recurse -Force -ErrorAction SilentlyContinue; Remove-Item -LiteralPath \'$(TARGET)\' -Force -ErrorAction SilentlyContinue; exit 0"',
 		''
 	);
 	return lines.join('\r\n');
@@ -216,7 +216,7 @@ async function build(provider: ProjectProvider, mode: BuildMode, resource?: Buil
 	}
 	const env = { ...process.env, ...(toolchain ? { PATH: `${toolchain}${path.delimiter}${process.env.PATH ?? ''}` } : {}) };
 	const run = (args: string[]) => new Promise<number>(resolve => {
-		const child = cp.spawn(make, args, { cwd: path.dirname(project.file), env, shell: true });
+		const child = cp.spawn(make, ['--no-print-directory', '--trace', ...args], { cwd: path.dirname(project.file), env, shell: true });
 		const stdoutDecoder = createOutputDecoder();
 		const stderrDecoder = createOutputDecoder();
 		child.stdout.on('data', data => output.append(stdoutDecoder.decode(data)));

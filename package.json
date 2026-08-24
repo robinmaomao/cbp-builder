@@ -2,7 +2,7 @@
   "name": "cbp-builder",
   "displayName": "CBP Builder",
   "description": "Discover and build Code::Blocks CBP projects from VS Code",
-  "version": "0.0.6",
+  "version": "0.0.7-beta",
   "repository": {
     "type": "git",
     "url": "https://github.com/robinmaomao/cbp-builder.git"
