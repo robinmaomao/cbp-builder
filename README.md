@@ -12,6 +12,13 @@
 - 支持活动栏工程节点和资源管理器 `.cbp` 文件右键菜单。
 - 编译输出写入 `CBP Builder` Output Channel。
 
+## 构建前提
+
+- 工程目录必须包含名为 `Makefile` 或 `makefile` 的 Make 构建文件。
+- `cbpBuilder.makeCommand` 默认使用 `mingw32-make`。
+- Makefile 应能在 `.cbp` 工程所在目录执行；扩展会在该目录运行 Make 命令。
+- 如果输出出现 `No targets specified and no makefile found`，请先为工程生成或放置 Makefile，再重新执行编译。
+
 ## 使用
 
 1. 按 `F5` 启动扩展开发主机。
@@ -32,3 +39,7 @@
 ## 验证
 
 在 `cbp-builder` 目录执行 `npm.cmd install`、`npm.cmd run compile` 和 `npm.cmd run lint`。
+
+## 更新记录
+
+详细变更请参阅 [CHANGELOG.md](CHANGELOG.md)。当前版本为 `0.0.3`。

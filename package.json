@@ -2,7 +2,7 @@
   "name": "cbp-builder",
   "displayName": "CBP Builder",
   "description": "Discover and build Code::Blocks CBP projects from VS Code",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "engines": {
     "vscode": "^1.134.0"
   },

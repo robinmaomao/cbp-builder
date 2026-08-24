@@ -59,13 +59,16 @@ function findToolchain(): string | undefined {
 	});
 }
 
-async function chooseProject(provider: ProjectProvider, resource?: vscode.Uri): Promise<CbpProject | undefined> {
+type BuildResource = vscode.Uri | ProjectItem;
+
+async function chooseProject(provider: ProjectProvider, resource?: BuildResource): Promise<CbpProject | undefined> {
+	if (resource instanceof ProjectItem) {return resource.project;}
 	if (resource?.fsPath.toLowerCase().endsWith('.cbp')) {return parseCbp(resource.fsPath);}
 	if (provider.projects.length === 1) {return provider.projects[0];}
 	return (await vscode.window.showQuickPick(provider.projects.map(project => ({ label: project.title, description: project.file, project }))))?.project;
 }
 
-async function build(provider: ProjectProvider, mode: BuildMode, resource?: vscode.Uri): Promise<void> {
+async function build(provider: ProjectProvider, mode: BuildMode, resource?: BuildResource): Promise<void> {
 	const project = await chooseProject(provider, resource);
 	if (!project) {return;}
 	const make = vscode.workspace.getConfiguration('cbpBuilder').get<string>('makeCommand', 'mingw32-make');
