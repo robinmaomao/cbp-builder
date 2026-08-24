@@ -180,6 +180,14 @@ function findToolchain(): string | undefined {
 	});
 }
 
+function createOutputDecoder(): { decode: (data: Buffer) => string; flush: () => string } {
+	const decoder = new TextDecoder(process.platform === 'win32' ? 'gb18030' : 'utf-8');
+	return {
+		decode: data => decoder.decode(data, { stream: true }),
+		flush: () => decoder.decode()
+	};
+}
+
 type BuildResource = vscode.Uri | ProjectItem;
 
 async function chooseProject(provider: ProjectProvider, resource?: BuildResource): Promise<CbpProject | undefined> {
@@ -207,7 +215,18 @@ async function build(provider: ProjectProvider, mode: BuildMode, resource?: Buil
 		return;
 	}
 	const env = { ...process.env, ...(toolchain ? { PATH: `${toolchain}${path.delimiter}${process.env.PATH ?? ''}` } : {}) };
-	const run = (args: string[]) => new Promise<number>(resolve => { const child = cp.spawn(make, args, { cwd: path.dirname(project.file), env, shell: true }); child.stdout.on('data', data => output.append(data.toString())); child.stderr.on('data', data => output.append(data.toString())); child.on('close', code => resolve(code ?? 1)); });
+	const run = (args: string[]) => new Promise<number>(resolve => {
+		const child = cp.spawn(make, args, { cwd: path.dirname(project.file), env, shell: true });
+		const stdoutDecoder = createOutputDecoder();
+		const stderrDecoder = createOutputDecoder();
+		child.stdout.on('data', data => output.append(stdoutDecoder.decode(data)));
+		child.stderr.on('data', data => output.append(stderrDecoder.decode(data)));
+		child.on('close', code => {
+			output.append(stdoutDecoder.flush());
+			output.append(stderrDecoder.flush());
+			resolve(code ?? 1);
+		});
+	});
 	const cleanCode = mode === 'full' ? await run(['clean']) : 0;
 	const code = cleanCode === 0 ? await run([]) : cleanCode;
 	provider.lastResult = code === 0 ? `成功 (${new Date().toLocaleTimeString()})` : `失败，退出码 ${code}`;
