@@ -16,7 +16,7 @@
 ## 构建前提
 
 - 工程目录必须包含名为 `Makefile` 或 `makefile` 的 Make 构建文件。
-- `cbpBuilder.makeCommand` 默认使用 `mingw32-make`。
+- `cbpBuilder.makeCommand` 默认使用 `mingw32-make`，需要正确安装MinGW，配置好相关的环境变量。
 - Makefile 应能在 `.cbp` 工程所在目录执行；扩展会在该目录运行 Make 命令。
 - 如果输出出现 `No targets specified and no makefile found`，请先为工程生成或放置 Makefile，再重新执行编译。
 
@@ -43,4 +43,4 @@
 
 ## 更新记录
 
-详细变更请参阅 [CHANGELOG.md](CHANGELOG.md)。当前版本为 `0.0.5`。
+详细变更请参阅 [CHANGELOG.md](CHANGELOG.md)。当前版本为 `v0.0.9-beta`。

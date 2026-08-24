@@ -4,6 +4,13 @@ All notable changes to the "cbp-builder" extension will be documented in this fi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.0.9-beta]
+
+- 根据当前选择的增量编译或全量编译方式，更新工程视图中的编译方式和编译结果。
+- 在 VS Code 的 `CBP Builder` 输出通道显示完整的 Make 编译、链接和后处理信息。
+- 使用 `--trace` 输出 Make 目标依赖及实际执行命令，并隐藏无关的目录提示。
+- 修复 CBP 工程源码和链接目录解析，支持完整编译工程源文件及静态库链接。
+
 ## [0.0.5]
 
 - 根据 CBP 工程配置自动生成 Makefile，并支持增量编译和全量编译。
