@@ -6,6 +6,7 @@
 
 - 递归扫描当前工作区中的 `.cbp` 文件，文件名和目录名不受限制。
 - 解析工程标题、编译器、目标和源文件数量。
+- 根据 CBP 工程配置自动生成 Makefile。
 - 从 `cbpBuilder.toolchainSearchPaths`、`TOOLCHAIN_DIR` 或系统 `PATH` 查找工具链。
 - 支持增量编译和全量编译。全量编译先执行 `make clean`，再执行 `make`。
 - 活动栏视图展示当前工程、编译方式和最近一次结果。
@@ -42,4 +43,4 @@
 
 ## 更新记录
 
-详细变更请参阅 [CHANGELOG.md](CHANGELOG.md)。当前版本为 `0.0.3`。
+详细变更请参阅 [CHANGELOG.md](CHANGELOG.md)。当前版本为 `0.0.5`。

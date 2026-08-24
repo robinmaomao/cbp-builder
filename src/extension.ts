@@ -6,7 +6,7 @@ import * as path from 'node:path';
 import * as vscode from 'vscode';
 
 type BuildMode = 'incremental' | 'full';
-interface CbpProject { file: string; title: string; compiler: string; target: string; files: string[]; compileOptions: string[]; includeDirectories: string[]; linkOptions: string[]; libraries: string[]; }
+interface CbpProject { file: string; title: string; compiler: string; target: string; output: string; objectOutput: string; files: string[]; compileSources: string[]; appXmSource?: string; compileOptions: string[]; includeDirectories: string[]; linkOptions: string[]; linkDirectories: string[]; libraries: string[]; preBuild?: string; postBuild?: string; }
 
 class ProjectItem extends vscode.TreeItem {
 	readonly contextValue = 'cbpProject';
@@ -46,8 +46,129 @@ function parseCbp(file: string): CbpProject | undefined {
 		const xml = fs.readFileSync(file, 'utf8');
 		const compilerBlock = xml.match(/<Compiler>([\s\S]*?)<\/Compiler>/)?.[1] ?? '';
 		const linkerBlock = xml.match(/<Linker>([\s\S]*?)<\/Linker>/)?.[1] ?? '';
-		return { file, title: xml.match(/<Option\s+title="([^"]+)"/)?.[1] ?? path.basename(file, '.cbp'), compiler: xml.match(/<Option\s+compiler="([^"]+)"/)?.[1] ?? '', target: xml.match(/<Target\s+title="([^"]+)"/)?.[1] ?? 'Debug', files: [...xml.matchAll(/<Unit\s+filename="([^"]+)"/g)].map(match => match[1]), compileOptions: [...compilerBlock.matchAll(/<Add\s+option="([^"]+)"/g)].map(match => match[1]), includeDirectories: [...compilerBlock.matchAll(/<Add\s+directory="([^"]+)"/g)].map(match => match[1]), linkOptions: [...linkerBlock.matchAll(/<Add\s+option="([^"]+)"/g)].map(match => match[1]), libraries: [...linkerBlock.matchAll(/<Add\s+library="([^"]+)"/g)].map(match => match[1]) };
+		const targetBlock = xml.match(/<Target\b[\s\S]*?<\/Target>/)?.[0] ?? '';
+		const units = [
+			...[...xml.matchAll(/<Unit\s+filename="([^"]+)"\s*>([\s\S]*?)<\/Unit>/g)].map(match => ({ file: match[1], metadata: match[2] })),
+			...[...xml.matchAll(/<Unit\s+filename="([^"]+)"\s*\/>/g)].map(match => ({ file: match[1], metadata: '' }))
+		];
+		const extraCommands = [...xml.matchAll(/<Add\s+(before|after)="([^"]+)"\s*\/>/g)];
+		return {
+			file,
+			title: xml.match(/<Option\s+title="([^"]+)"/)?.[1] ?? path.basename(file, '.cbp'),
+			compiler: xml.match(/<Option\s+compiler="([^"]+)"/)?.[1] ?? '',
+			target: targetBlock.match(/<Target\s+title="([^"]+)"/)?.[1] ?? 'Debug',
+			output: targetBlock.match(/<Option\s+output="([^"]+)"/)?.[1] ?? 'Output/bin/app.rv32',
+			objectOutput: targetBlock.match(/<Option\s+object_output="([^"]+)"/)?.[1] ?? 'Output/obj/',
+			files: units.map(unit => unit.file),
+			compileSources: units.filter(unit => /\.c$/i.test(unit.file) && /compilerVar="CC"/.test(unit.metadata)).map(unit => unit.file),
+			appXmSource: units.find(unit => /(?:^|\/)app\.xm$/i.test(unit.file) && /buildCommand="[^"]*-o \$\(TARGET_OUTPUT_DIR\)appxm\.o/.test(unit.metadata))?.file,
+			compileOptions: [...compilerBlock.matchAll(/<Add\s+option="([^"]+)"/g)].map(match => match[1]),
+			includeDirectories: [...compilerBlock.matchAll(/<Add\s+directory="([^"]+)"/g)].map(match => match[1]),
+			linkOptions: [...linkerBlock.matchAll(/<Add\s+option="([^"]+)"/g)].map(match => match[1]),
+			linkDirectories: [...linkerBlock.matchAll(/<Add\s+directory="([^"]+)"/g)].map(match => match[1]),
+			libraries: [...linkerBlock.matchAll(/<Add\s+library="([^"]+)"/g)].map(match => match[1]),
+			preBuild: extraCommands.find(match => match[1] === 'before')?.[2],
+			postBuild: extraCommands.find(match => match[1] === 'after')?.[2]
+		};
 	} catch { return undefined; }
+}
+
+function makefilePath(project: CbpProject): string {
+	return path.join(path.dirname(project.file), 'Makefile');
+}
+
+function quoteMake(value: string): string {
+	return value.replace(/\\/g, '/').replace(/([ #$])/g, '\\$1');
+}
+
+function toGccLinkerOption(option: string): string {
+	const normalized = option.replace(/\\/g, '/').replace(/\$\(TARGET_OBJECT_DIR\)ram\.o/, '$(OBJ_DIR)/ram.o');
+	if (normalized.startsWith('-Wl,')) {return normalized;}
+	if (normalized === '--gc-sections' || normalized.startsWith('-Map=') || normalized.startsWith('-T')) {
+		return `-Wl,${normalized}`;
+	}
+	return normalized;
+}
+
+function generateMakefile(project: CbpProject): string {
+	const output = project.output.replace(/\\/g, '/');
+	const objectOutput = project.objectOutput.replace(/\\/g, '/').replace(/\/$/, '');
+	const outputDirectory = path.posix.dirname(output);
+	const linkerOptions = project.linkOptions.map(toGccLinkerOption);
+	const sources = project.compileSources.map(source => source.replace(/\\/g, '/'));
+	const objects = sources.map((_, index) => `$(OBJ_DIR)/source-${index}.o`);
+	const appXmSource = project.appXmSource?.replace(/\\/g, '/');
+	const libraryDirectories = project.linkDirectories.map(directory => `-L${quoteMake(directory.replace(/\\/g, '/'))}`);
+	const lines = [
+		`# Generated from ${path.basename(project.file)}. Do not edit manually.`,
+		'PROJECT := ' + quoteMake(project.title),
+		'.DEFAULT_GOAL := all',
+		'',
+		'TOOLCHAIN_DIR ?= C:/Program Files (x86)/RV32-Toolchain/RV32-V2/bin',
+		'TOOLCHAIN ?= $(TOOLCHAIN_DIR)/riscv32-elf-',
+		'CC := $(TOOLCHAIN)gcc',
+		'export PATH := $(TOOLCHAIN_DIR);$(PATH)',
+		'',
+		`OUT_DIR := ${quoteMake(path.posix.dirname(outputDirectory))}`,
+		`BIN_DIR := ${quoteMake(outputDirectory)}`,
+		`OBJ_DIR := ${quoteMake(objectOutput)}`,
+		`TARGET := ${quoteMake(output)}`,
+		'',
+		`CPPFLAGS := ${project.includeDirectories.map(directory => `-I${quoteMake(directory)}`).join(' ')}`,
+		`CFLAGS := ${project.compileOptions.join(' ')}`,
+		`LDFLAGS := -nostdlib ${linkerOptions.join(' ')}`,
+		`LDLIBS := ${[...libraryDirectories, ...project.libraries.map(library => `-l${library.replace(/^lib/, '')}`), ...project.linkOptions.filter(option => /^-L/.test(option))].join(' ')}`,
+		'',
+		`OBJECTS := ${objects.join(' ')}`,
+		'',
+		'.PHONY: all clean prebuild postbuild',
+		'all: postbuild',
+		'',
+		`$(TARGET): $(OBJECTS) $(OBJ_DIR)/ram.o${appXmSource ? ' $(BIN_DIR)/appxm.o' : ''} | prebuild`,
+		'\t@"$(CC)" $(OBJECTS) $(LDFLAGS) $(LDLIBS) -o "$@"',
+		''
+	];
+	sources.forEach((source, index) => {
+		lines.push(`${objects[index]}: ${quoteMake(source)} | $(OBJ_DIR)`);
+		lines.push(`\t@"$(CC)" $(CPPFLAGS) $(CFLAGS) -c "$<" -o "$@"`, '');
+	});
+	lines.push(
+		'$(OBJ_DIR)/ram.o: ram.ld | $(OBJ_DIR)',
+		'\t@"$(CC)" $(CFLAGS) $(CPPFLAGS) -E -P -x c -c "$<" -o "$@"',
+		'',
+		'$(BIN_DIR) $(OBJ_DIR):',
+		'\t@if not exist "$@" mkdir "$@"',
+		''
+	);
+	if (appXmSource) {
+		lines.push(
+			'$(BIN_DIR)/appxm.o: ' + quoteMake(appXmSource) + ' | $(BIN_DIR)',
+			'\t@"$(CC)" $(CFLAGS) $(CPPFLAGS) -E -P -x c -c "$<" -o "$@"',
+			''
+		);
+	}
+	if (project.preBuild) {lines.push('prebuild: | $(BIN_DIR) $(OBJ_DIR)', `\t@${project.preBuild.replace(/\$\(PROJECT_NAME\)/g, '$(PROJECT)')}`, '');}
+	else {lines.push('prebuild: | $(BIN_DIR) $(OBJ_DIR)', '');}
+	if (project.postBuild) {lines.push('postbuild: $(TARGET)', `\t@${project.postBuild.replace(/\$\(PROJECT_NAME\)/g, '$(PROJECT)')}`, '');}
+	else {lines.push('postbuild: $(TARGET)', '');}
+	lines.push(
+		'clean:',
+		'\t@-powershell -NoProfile -ExecutionPolicy Bypass -Command "Remove-Item -LiteralPath \'$(OBJ_DIR)\' -Recurse -Force -ErrorAction SilentlyContinue; Remove-Item -LiteralPath \'$(TARGET)\' -Force -ErrorAction SilentlyContinue; exit 0"',
+		''
+	);
+	return lines.join('\r\n');
+}
+
+function ensureMakefile(project: CbpProject, output: vscode.OutputChannel): string {
+	const file = makefilePath(project);
+	const generatedMarker = `# Generated from ${path.basename(project.file)}. Do not edit manually.`;
+	if (fs.existsSync(file) && !fs.readFileSync(file, 'utf8').includes(generatedMarker)) {
+		output.appendLine(`[CBP Builder] Makefile: ${file}`);
+		return file;
+	}
+	fs.writeFileSync(file, generateMakefile(project), 'utf8');
+	output.appendLine(`[CBP Builder] 已根据 ${path.basename(project.file)} 生成 Makefile: ${file}`);
+	return file;
 }
 
 function findToolchain(): string | undefined {
@@ -77,6 +198,14 @@ async function build(provider: ProjectProvider, mode: BuildMode, resource?: Buil
 	output.show(true);
 	output.appendLine(`[CBP Builder] ${mode === 'full' ? '全量' : '增量'}编译: ${project.file}`);
 	output.appendLine(`[CBP Builder] 工具链: ${toolchain ?? '默认环境'}`);
+	try { ensureMakefile(project, output); } catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		output.appendLine(`[CBP Builder] 生成 Makefile 失败: ${message}`);
+		vscode.window.showErrorMessage(`${project.title} 无法生成 Makefile，请查看 CBP Builder 输出`);
+		provider.lastResult = '失败，无法生成 Makefile';
+		provider.refresh();
+		return;
+	}
 	const env = { ...process.env, ...(toolchain ? { PATH: `${toolchain}${path.delimiter}${process.env.PATH ?? ''}` } : {}) };
 	const run = (args: string[]) => new Promise<number>(resolve => { const child = cp.spawn(make, args, { cwd: path.dirname(project.file), env, shell: true }); child.stdout.on('data', data => output.append(data.toString())); child.stderr.on('data', data => output.append(data.toString())); child.on('close', code => resolve(code ?? 1)); });
 	const cleanCode = mode === 'full' ? await run(['clean']) : 0;

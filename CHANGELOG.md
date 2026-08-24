@@ -4,6 +4,13 @@ All notable changes to the "cbp-builder" extension will be documented in this fi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.0.5]
+
+- 根据 CBP 工程配置自动生成 Makefile，并支持增量编译和全量编译。
+- 完善 RV32 工具链目录发现，支持扩展设置、`TOOLCHAIN_DIR` 和系统 `PATH`。
+- 支持从活动栏工程树或资源管理器中的 `.cbp` 文件直接执行编译。
+- 在工程视图中展示编译配置、头文件目录、链接库和最近一次编译结果。
+
 ## [0.0.3]
 
 - 修复从工程树执行增量或全量编译时，命令参数不是 `vscode.Uri` 导致的运行时错误。
