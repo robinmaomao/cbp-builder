@@ -38,13 +38,14 @@ class ProjectProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
 		const found = await vscode.workspace.findFiles('**/*.cbp', '**/{node_modules,.git,Output}/**');
 		this.projects = found.map(uri => parseCbp(uri.fsPath)).filter((project): project is CbpProject => project !== undefined);
 		if (!this.projects.length) {this.lastResult = '未找到 .cbp 工程';}
+		await vscode.commands.executeCommand('setContext', 'cbpBuilder.hasProjects', this.projects.length > 0);
 		if (this.projects.length && !this.compileRunDisableAttempted) {
 			this.compileRunDisableAttempted = true;
 			void disableCompileRunExtension();
 		}
 		this.refresh();
 	}
-	add(file: string): void { const project = parseCbp(file); if (project && !this.projects.some(item => item.file === project.file)) {this.projects.push(project);} this.refresh(); }
+	add(file: string): void { const project = parseCbp(file); if (project && !this.projects.some(item => item.file === project.file)) {this.projects.push(project); void vscode.commands.executeCommand('setContext', 'cbpBuilder.hasProjects', true);} this.refresh(); }
 }
 
 async function disableCompileRunExtension(): Promise<void> {
@@ -279,6 +280,18 @@ async function build(provider: ProjectProvider, mode: BuildMode, resource?: Buil
 
 export function activate(context: vscode.ExtensionContext): void {
 	const provider = new ProjectProvider();
+	const incrementalItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+	incrementalItem.text = '$(play) 增量编译';
+	incrementalItem.tooltip = 'CBP Builder：增量编译';
+	incrementalItem.command = 'cbpBuilder.buildIncremental';
+	const fullItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 99);
+	fullItem.text = '$(debug-restart) 全量编译';
+	fullItem.tooltip = 'CBP Builder：全量编译';
+	fullItem.command = 'cbpBuilder.buildFull';
+	const updateStatusBar = (): void => {
+		if (provider.projects.length) {incrementalItem.show(); fullItem.show();} else {incrementalItem.hide(); fullItem.hide();}
+	};
+	context.subscriptions.push(incrementalItem, fullItem, provider.onDidChangeTreeData(() => updateStatusBar()));
 	context.subscriptions.push(vscode.window.registerTreeDataProvider('cbpBuilder.projects', provider));
 	context.subscriptions.push(vscode.commands.registerCommand('cbpBuilder.addProject', async () => { const files = await vscode.window.showOpenDialog({ canSelectMany: true, filters: { 'Code::Blocks Project': ['cbp'] }, openLabel: '添加 .cbp 工程' }); files?.forEach(file => provider.add(file.fsPath)); }));
 	context.subscriptions.push(vscode.commands.registerCommand('cbpBuilder.refresh', () => provider.scan()));
