@@ -4,6 +4,10 @@ All notable changes to the "cbp-builder" extension will be documented in this fi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.0.0]
+
+- 发布 1.0.0 正式版。
+
 ## [0.0.16-beta]
 
 - 检测到工作区存在有效 `.cbp` 工程时，尝试在当前工作区禁用 `C/C++ Compile Run` 扩展，避免编译入口冲突。
