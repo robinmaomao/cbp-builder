@@ -4,6 +4,17 @@ All notable changes to the "cbp-builder" extension will be documented in this fi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.0.14-beta]
+
+- 支持在工作区任意文件的编辑器和资源管理器右键菜单中选择增量编译或全量编译。
+- 右键非 `.cbp` 文件时，根据当前已扫描的 CBP 工程自动选择或提示选择目标工程。
+
+## [0.0.13-beta]
+
+- 在打开的 `.cbp` 工程编辑器右键菜单中增加增量编译和全量编译入口。
+- 支持从编辑器右键菜单选择编译方式，并直接对当前工程执行构建。
+- 支持在工作区任意文件的编辑器或资源管理器右键菜单中选择编译方式。
+
 ## [0.0.12-beta]
 
 - 修复编译输出中的工程路径被 VS Code 自动标红的问题。

@@ -268,7 +268,7 @@ export function activate(context: vscode.ExtensionContext): void {
 	context.subscriptions.push(vscode.commands.registerCommand('cbpBuilder.refresh', () => provider.scan()));
 	context.subscriptions.push(vscode.commands.registerCommand('cbpBuilder.buildIncremental', (resource?: vscode.Uri) => build(provider, 'incremental', resource)));
 	context.subscriptions.push(vscode.commands.registerCommand('cbpBuilder.buildFull', (resource?: vscode.Uri) => build(provider, 'full', resource)));
-	context.subscriptions.push(vscode.commands.registerCommand('cbpBuilder.selectMode', async () => { const selected = await vscode.window.showQuickPick([{ label: '增量编译', mode: 'incremental' as const }, { label: '全量编译', mode: 'full' as const }]); if (selected) { provider.mode = selected.mode; provider.refresh(); } }));
+	context.subscriptions.push(vscode.commands.registerCommand('cbpBuilder.selectMode', async (resource?: BuildResource) => { const selected = await vscode.window.showQuickPick([{ label: '增量编译', mode: 'incremental' as const }, { label: '全量编译', mode: 'full' as const }], { placeHolder: '选择编译方式' }); if (selected) { await build(provider, selected.mode, resource); } }));
 	provider.scan();
 }
 
