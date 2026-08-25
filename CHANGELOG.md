@@ -4,6 +4,11 @@ All notable changes to the "cbp-builder" extension will be documented in this fi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.0.16-beta]
+
+- 检测到工作区存在有效 `.cbp` 工程时，尝试在当前工作区禁用 `C/C++ Compile Run` 扩展，避免编译入口冲突。
+- 如果无法自动禁用该扩展，显示工作区级别的手动禁用提示。
+
 ## [0.0.15-beta]
 
 - 优化工作区任意文件右键编译入口，支持直接选择增量编译或全量编译。

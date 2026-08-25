@@ -6,6 +6,7 @@ import * as path from 'node:path';
 import * as vscode from 'vscode';
 
 type BuildMode = 'incremental' | 'full';
+const compileRunExtensionId = 'danielpinto8zz6.c-cpp-compile-run';
 interface CbpProject { file: string; title: string; compiler: string; target: string; output: string; objectOutput: string; files: string[]; compileSources: string[]; appXmSource?: string; compileOptions: string[]; includeDirectories: string[]; linkOptions: string[]; linkDirectories: string[]; libraries: string[]; preBuild?: string; postBuild?: string; }
 
 class ProjectItem extends vscode.TreeItem {
@@ -25,6 +26,7 @@ class ProjectProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
 	projects: CbpProject[] = [];
 	mode: BuildMode = 'incremental';
 	lastResult = '尚未编译';
+	private compileRunDisableAttempted = false;
 	getTreeItem(item: vscode.TreeItem): vscode.TreeItem { return item; }
 	getChildren(item?: vscode.TreeItem): vscode.TreeItem[] {
 		if (!item) {return this.projects.map(project => new ProjectItem(project));}
@@ -36,9 +38,23 @@ class ProjectProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
 		const found = await vscode.workspace.findFiles('**/*.cbp', '**/{node_modules,.git,Output}/**');
 		this.projects = found.map(uri => parseCbp(uri.fsPath)).filter((project): project is CbpProject => project !== undefined);
 		if (!this.projects.length) {this.lastResult = '未找到 .cbp 工程';}
+		if (this.projects.length && !this.compileRunDisableAttempted) {
+			this.compileRunDisableAttempted = true;
+			void disableCompileRunExtension();
+		}
 		this.refresh();
 	}
 	add(file: string): void { const project = parseCbp(file); if (project && !this.projects.some(item => item.file === project.file)) {this.projects.push(project);} this.refresh(); }
+}
+
+async function disableCompileRunExtension(): Promise<void> {
+	if (!vscode.extensions.getExtension(compileRunExtensionId)) {return;}
+	try {
+		await vscode.commands.executeCommand('workbench.extensions.action.disableWorkspaceExtension', compileRunExtensionId);
+		vscode.window.showInformationMessage('检测到 CBP 工程，已在当前工作区禁用 C/C++ Compile Run 扩展。');
+	} catch {
+		vscode.window.showWarningMessage('检测到 CBP 工程，但无法自动禁用 C/C++ Compile Run 扩展，请在扩展面板中选择“在工作区禁用”。');
+	}
 }
 
 function parseCbp(file: string): CbpProject | undefined {
