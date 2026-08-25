@@ -4,6 +4,11 @@ All notable changes to the "cbp-builder" extension will be documented in this fi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.0.1]
+
+- 编译前自动保存当前工作区的所有文件。
+- 发布 1.0.1 版本。
+
 ## [1.0.0]
 
 - 发布 1.0.0 正式版。

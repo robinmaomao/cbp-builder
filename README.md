@@ -9,6 +9,7 @@
 - 根据 CBP 工程配置自动生成 Makefile。
 - 从 `cbpBuilder.toolchainSearchPaths`、`TOOLCHAIN_DIR` 或系统 `PATH` 查找工具链。
 - 支持增量编译和全量编译。全量编译先执行 `make clean`，再执行 `make`。
+- 执行任意编译前自动保存当前工作区的所有文件；保存失败时取消编译。
 - 活动栏视图展示当前工程、编译方式和最近一次结果。
 - 支持活动栏工程节点、编辑器标签页、编辑器和资源管理器任意工作区文件的右键编译菜单。
 - 检测到 CBP 工程后，在 VS Code 状态栏和命令菜单中提供增量编译、全量编译入口。
@@ -48,4 +49,4 @@
 
 ## 更新记录
 
-详细变更请参阅 [CHANGELOG.md](CHANGELOG.md)。当前版本为 `1.0.0`。
+详细变更请参阅 [CHANGELOG.md](CHANGELOG.md)。当前版本为 `1.0.1`。

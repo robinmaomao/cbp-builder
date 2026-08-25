@@ -222,6 +222,11 @@ async function chooseProject(provider: ProjectProvider, resource?: BuildResource
 async function build(provider: ProjectProvider, mode: BuildMode, resource?: BuildResource): Promise<void> {
 	const project = await chooseProject(provider, resource);
 	if (!project) {return;}
+	const saved = await vscode.workspace.saveAll(false);
+	if (!saved) {
+		vscode.window.showErrorMessage('无法保存当前工作区的所有文件，已取消编译');
+		return;
+	}
 	provider.mode = mode;
 	provider.lastResult = `${mode === 'full' ? '全量' : '增量'}编译中...`;
 	provider.refresh();
