@@ -2,7 +2,7 @@
   "name": "cbp-builder",
   "displayName": "CBP Builder",
   "description": "Discover and build Code::Blocks CBP projects from VS Code",
-  "version": "0.0.14-beta",
+  "version": "0.0.15-beta",
   "repository": {
     "type": "git",
     "url": "https://github.com/robinmaomao/cbp-builder.git"
@@ -41,8 +41,8 @@
     "menus": {
       "view/title": [{ "command": "cbpBuilder.addProject", "when": "view == cbpBuilder.projects", "group": "navigation@1" }, { "command": "cbpBuilder.refresh", "when": "view == cbpBuilder.projects", "group": "navigation@2" }],
       "view/item/context": [{ "command": "cbpBuilder.buildIncremental", "when": "view == cbpBuilder.projects && viewItem == cbpProject", "group": "inline@1" }, { "command": "cbpBuilder.buildFull", "when": "view == cbpBuilder.projects && viewItem == cbpProject", "group": "inline@2" }, { "command": "cbpBuilder.selectMode", "when": "view == cbpBuilder.projects && viewItem == cbpProject", "group": "navigation@1" }],
-      "explorer/context": [{ "command": "cbpBuilder.buildIncremental", "when": "resourceFilename", "group": "navigation@1" }, { "command": "cbpBuilder.buildFull", "when": "resourceFilename", "group": "navigation@2" }, { "command": "cbpBuilder.selectMode", "when": "resourceFilename", "group": "navigation@3" }],
-      "editor/context": [{ "command": "cbpBuilder.buildIncremental", "when": "editorTextFocus", "group": "navigation@1" }, { "command": "cbpBuilder.buildFull", "when": "editorTextFocus", "group": "navigation@2" }, { "command": "cbpBuilder.selectMode", "when": "editorTextFocus", "group": "navigation@3" }]
+      "explorer/context": [{ "command": "cbpBuilder.buildIncremental", "when": "resourceFilename", "group": "navigation@1" }, { "command": "cbpBuilder.buildFull", "when": "resourceFilename", "group": "navigation@2" }],
+      "editor/context": [{ "command": "cbpBuilder.buildIncremental", "when": "resourceExtname == .cbp", "group": "navigation@1" }, { "command": "cbpBuilder.buildFull", "when": "resourceExtname == .cbp", "group": "navigation@2" }]
     },
     "configuration": { "title": "CBP Builder", "properties": { "cbpBuilder.toolchainSearchPaths": { "type": "array", "items": { "type": "string" }, "default": [], "description": "工具链目录；也可使用 TOOLCHAIN_DIR 环境变量或 PATH。" }, "cbpBuilder.makeCommand": { "type": "string", "default": "mingw32-make", "description": "Make 命令名称。" } } }
   },

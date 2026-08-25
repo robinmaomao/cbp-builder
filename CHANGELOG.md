@@ -4,6 +4,11 @@ All notable changes to the "cbp-builder" extension will be documented in this fi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.0.15-beta]
+
+- 优化工作区任意文件右键编译入口，支持直接选择增量编译或全量编译。
+- 保持非 `.cbp` 文件右键编译时的工程自动选择和多工程选择提示。
+
 ## [0.0.14-beta]
 
 - 支持在工作区任意文件的编辑器和资源管理器右键菜单中选择增量编译或全量编译。
